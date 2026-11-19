@@ -5,6 +5,7 @@
 import os
 import unittest
 
+from src import large
 from src.judge import UNDECIDED, judge, normalize_label
 from src.mac import mac, mac_flat
 from src.matrix import (flatten, get_value, is_square, make_cross, make_matrix,
@@ -43,6 +44,26 @@ class MacTest(unittest.TestCase):
     def test_flat_equals_2d(self):
         p, f = make_x(13), make_cross(13, 0.3)
         self.assertEqual(mac(p, f), mac_flat(flatten(p), flatten(f)))
+
+
+class LargeTest(unittest.TestCase):
+    def test_optimized_macs_match_baseline(self):
+        for n in (3, 13, 100):  # 100은 블록(64) 경계가 나누어떨어지지 않는 경우
+            p, f = make_x(n), large.make_real_matrix(n)
+            expected = mac(p, f)
+            self.assertAlmostEqual(large.mac_blocked(p, f), expected, delta=1e-9)
+            self.assertAlmostEqual(
+                large.mac_array(large.to_array(p), large.to_array(f)), expected, delta=1e-9)
+
+    def test_parallel_matches_baseline(self):
+        p, f = make_cross(50), large.make_real_matrix(50)
+        with large.make_executor(2) as ex:
+            self.assertAlmostEqual(large.mac_parallel(p, f, ex, 2), mac(p, f), delta=1e-9)
+
+    def test_array_uses_less_memory(self):
+        list_bytes, _ = large.measure_memory_bytes(large.make_real_matrix, 300)
+        array_bytes, _ = large.measure_memory_bytes(large.make_real_array, 300)
+        self.assertLess(array_bytes, list_bytes / 2)
 
 
 class JudgeTest(unittest.TestCase):

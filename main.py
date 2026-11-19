@@ -3,7 +3,7 @@
 import os
 import sys
 
-from src import mode_input, mode_json
+from src import mode_input, mode_json, mode_large
 
 DEFAULT_DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
 
@@ -12,18 +12,22 @@ def select_mode():
     print("[모드 선택]")
     print("1. 사용자 입력 (3x3)")
     print("2. data.json 분석")
+    print("3. 패턴 생성기 + 대형 N 분석 (보너스)")
     while True:
         choice = input("선택: ").strip()
-        if choice in ("1", "2"):
+        if choice in ("1", "2", "3"):
             return choice
-        print("1 또는 2를 입력하세요.")
+        print("1, 2, 3 중 하나를 입력하세요.")
 
 
 def main():
     print("=== Mini NPU Simulator ===\n")
     try:
-        if select_mode() == "1":
+        choice = select_mode()
+        if choice == "1":
             mode_input.run()
+        elif choice == "3":
+            mode_large.run()
         else:
             # python main.py [data.json 경로] 로 다른 파일을 지정할 수 있다.
             path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_DATA
